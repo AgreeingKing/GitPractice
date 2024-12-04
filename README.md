@@ -1,0 +1,2 @@
+# GitPractice
+Practicing inside GitHub
