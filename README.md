@@ -1,2 +1,2 @@
 # GitPractice
-For practicing inside GitHub....duhhh
+For practicing inside GitHub....obviously
