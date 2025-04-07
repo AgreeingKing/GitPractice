@@ -318,6 +318,70 @@ def confirm(answer=str):
     return False
 
 
+# Load users into dictionary.
+def load_users():
+    try:
+        with open("users.txt", "r", encoding="utf-8") as user_document:
+            user_dictionary = {}
+
+            for line in user_document:
+                user_details = line.split(", ")
+                user_name = user_details[0]
+                user_password = user_details[1].strip()
+                user_dictionary.update({user_name: user_password})
+        return user_dictionary
+
+    except FileNotFoundError:
+        return print(
+            "Please make sure the user.txt file is in the same directory as "
+            "the currently running python file."
+        )
+
+
+def login():
+    """This function serves as the login confirmation.
+    It will only allow a user to continue if a valid and matching
+    username and password is given.
+    """
+    # Login prompt
+    user_dictionary = load_users()
+
+    if user_dictionary == {}:
+        exit()
+
+    retries = 0
+    retry_max = 3
+    while True:
+        login_username = input("\nUsername: ")
+
+        # Check username
+        if login_username in user_dictionary and retries <= retry_max:
+            login_password = input("Password: ")
+
+            # Check password
+            if login_password == user_dictionary.get(login_username):
+                print(f"\nWelcome {login_username.capitalize()}!\n")
+                return True
+            else:
+                print(
+                    "\nPassword incorrect. Try again.\n"
+                    f"Retries remaining {retry_max-retries}"
+                )
+                retries += 1
+                continue
+        elif retries <= retry_max:
+            print(
+                f"\nUser {login_username} is not registered. "
+                "Please enter a valid username.\n"
+                f"Retries remaining {retry_max-retries}"
+            )
+            retries += 1
+            continue
+        else:
+            print("\nRetry limit reached!")
+            return False
+
+
 # region DB creation
 
 db = sqlite3.connect("ebookstore.db")
@@ -380,143 +444,152 @@ print(
 -------------------------
 Welcome to the Book DB!
 -------------------------
+
+Please log in:
 """
 )
 
-while True:
-    option = (
-        input(
-            """
-=== Main Menu ===
 
-Please choose an option:
-1. Add book
-2. Update book
-3. Delete book
-4. Search books
-5. List all books
-0. Exit
+if login():
+    while True:
+        option = (
+            input(
+                """
+    === Main Menu ===
 
-:"""
+    Please choose an option:
+    1. Add book
+    2. Update book
+    3. Delete book
+    4. Search books
+    5. List all books
+    0. Exit
+
+    :"""
+            )
+            .lower()
+            .strip()
         )
-        .lower()
-        .strip()
-    )
 
-    # Add Book Option
-    if option == "1":
-        add_book()
+        # Add Book Option
+        if option == "1":
+            add_book()
 
-    # Update Book Option
-    elif option == "2":
-        while True:
-            try:
-                update_book_id = int(input("\nBook ID to update:\n"))
-                cursor.execute(
-                    """SELECT * FROM book WHERE id = ?;""", (update_book_id,)
-                )
-                book_details = cursor.fetchone()
-                if book_details is not None:
-                    book = Book(book_details)
-                    book.update(cursor)
-                    if confirm(input("Update another value? (Y/N)")):
-                        continue
+        # Update Book Option
+        elif option == "2":
+            while True:
+                try:
+                    update_book_id = int(input("\nBook ID to update:\n"))
+                    cursor.execute(
+                        """SELECT * FROM book WHERE id = ?;""", (update_book_id,)
+                    )
+                    book_details = cursor.fetchone()
+                    if book_details is not None:
+                        book = Book(book_details)
+                        book.update(cursor)
+                        if confirm(input("Update another value? (Y/N)")):
+                            continue
+                        else:
+                            break
                     else:
-                        break
-                else:
-                    print(f"\nUnable to locate book with ID: {update_book_id}")
+                        print(f"\nUnable to locate book with ID: {update_book_id}")
+                        print(
+                            """Please insert a valid ID.
+    Use Option 5 to list or Option 4 to search for the book and
+    find it's appropriate ID.
+                    """
+                        )
+
+                except ValueError:
                     print(
                         """Please insert a valid ID.
-Use Option 5 to list or Option 4 to search for the book and
-find it's appropriate ID.
-                """
+    Make sure that it only consists of numbers.
+    Use Option 5 to list or Option 4 to search for the book and
+    find it's appropriate ID.
+                    """
                     )
 
-            except ValueError:
-                print(
-                    """Please insert a valid ID.
-Make sure that it only consists of numbers.
-Use Option 5 to list or Option 4 to search for the book and
-find it's appropriate ID.
-                """
-                )
-
-            if confirm(input("\nTry again? Y/N\n")):
-                continue
-            else:
-                break
-
-    # Delete Book Option
-    elif option == "3":
-        while True:
-            try:
-                delete_book_id = int(input("\nBook ID to delete:\n"))
-                cursor.execute(
-                    """SELECT * FROM book WHERE id = ?;""", (delete_book_id,)
-                )
-                book_details = cursor.fetchone()
-                if book_details is not None:
-                    book = Book(book_details)
-                    book.delete(cursor)
-                    db.commit()
-                    break
+                if confirm(input("\nTry again? Y/N\n")):
+                    continue
                 else:
-                    print(f"\nUnable to locate book with ID: {delete_book_id}")
+                    break
+
+        # Delete Book Option
+        elif option == "3":
+            while True:
+                try:
+                    delete_book_id = int(input("\nBook ID to delete:\n"))
+                    cursor.execute(
+                        """SELECT * FROM book WHERE id = ?;""", (delete_book_id,)
+                    )
+                    book_details = cursor.fetchone()
+                    if book_details is not None:
+                        book = Book(book_details)
+                        book.delete(cursor)
+                        db.commit()
+                        break
+                    else:
+                        print(f"\nUnable to locate book with ID: {delete_book_id}")
+                        print(
+                            """
+    Use Option 5 to list or Option 4 to search for the book and
+    find it's appropriate ID.
+                    """
+                        )
+
+                except ValueError:
                     print(
-                        """
-Use Option 5 to list or Option 4 to search for the book and
-find it's appropriate ID.
-                """
+                        """Please insert a valid ID that only conists of numbers.
+    Use Option 5 to list or Option 4 to search for the book and
+    find it's appropriate ID.
+                    """
                     )
 
-            except ValueError:
-                print(
-                    """Please insert a valid ID that only conists of numbers.
-Use Option 5 to list or Option 4 to search for the book and
-find it's appropriate ID.
+                if confirm(input("\nTry again? Y/N\n")):
+                    continue
+                else:
+                    break
+
+        # Search for Book Option
+        elif option == "4":
+            print(
                 """
-                )
+                ====== SEARCH =====
+    Please enter the following details of the book.
+    Blank and partial values are accepted."""
+            )
+            while True:
+                search_details = []
+                search_details.append(input("\nID: "))
+                search_details.append(input("Title: "))
+                search_details.append(input("Author: "))
+                search_details.append(input("Quantity: "))
 
-            if confirm(input("\nTry again? Y/N\n")):
-                continue
-            else:
-                break
+                if search_books(search_details):
+                    continue
+                else:
+                    break
 
-    # Search for Book Option
-    elif option == "4":
-        print(
-            """
-            ====== SEARCH =====
-Please enter the following details of the book.
-Blank and partial values are accepted."""
-        )
-        while True:
-            search_details = []
-            search_details.append(input("\nID: "))
-            search_details.append(input("Title: "))
-            search_details.append(input("Author: "))
-            search_details.append(input("Quantity: "))
+        # List Books Option
+        elif option == "5":
+            list_all()
 
-            if search_books(search_details):
-                continue
-            else:
-                break
+        # Exit Option
+        elif option == "0":
+            print(
+                """
+    Thank you for using the Book DB!
+    Happy reading!
 
-    # List Books Option
-    elif option == "5":
-        list_all()
+    Program exiting...
+    """
+            )
+            db.close()
+            exit()
+        else:
+            print("\nPlease enter a valid option!\n")
 
-    # Exit Option
-    elif option == "0":
-        print(
-            """
-Thank you for using the Book DB!
-Happy reading!
-
-Program exiting...
-"""
-        )
-        db.close()
-        exit()
-    else:
-        print("\nPlease enter a valid option!\n")
+else:
+    print("Invalid login. Program exiting...")
+    db.close()
+    exit()
