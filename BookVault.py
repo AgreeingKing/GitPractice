@@ -12,14 +12,36 @@ if os.getcwd() != python_file_directory:
 # I'm not sure if I should use a class as it seems unnecessary.
 # I added it as the task says we should use all that we have learnt so far.
 class Book:
+    """A class that represents a book in the database.
+
+    Attributes:
+        id (int) = Unique identifier per book
+        title (string) = Title of book
+        author (string) = Author of book
+        qty (int) = Quantity of this book in stock
+    """
 
     def __init__(self, details):
+        """Initializes an instance of a book
+
+        Parameters:
+            id (int) = Unique identifier per book
+            title (string) = Title of book
+            author (string) = Author of book
+            qty (int) = Quantity of this book in stock
+        """
         self.id = details[0]
         self.title = details[1]
         self.author = details[2]
         self.qty = details[3]
 
     def delete(self, cursor):
+        """This method deletes the specific book.
+
+        Parameters:
+            cursor(db.cursor) = SQLite3 database cursor
+        """
+
         print(
             f"""
 The following book will be deleted:
@@ -38,6 +60,11 @@ Author: {self.author}
             print("\nOperation cancelled.\n")
 
     def update(self, cursor):
+        """This method updates the selected book in the database
+
+        Parameters:
+            cursor(db.cursor) = SQLite3 database cursor
+        """
 
         print(
             f"""
@@ -93,6 +120,10 @@ What would you like to update?
 
 # Add book to DB
 def add_book():
+    """This function adds a book to the database.
+    It prompts the user to enter the new details of the book
+    then sends a SQL query to add it to the database."""
+
     while True:
         new_book = []
         new_book.append(generate_new_id())
@@ -129,6 +160,24 @@ def add_book():
 
 # Verify data before writing to DB
 def verify_details(book_details):
+    """This function is used to verify a books details
+    before trying to add it to the database ensuring
+    data entegrity.
+    ID needs to be an integer
+    Author cannot be empty
+    Title cannot be empty
+    Quantity cannot be negative and must be an integer.
+
+    Parameters:
+        book_details (list) = A list containing the details
+            of the book that needs to be added to the database:
+            [id (int), title (string), author (string), qty (int)]
+
+    Returns:
+        False if any of the above conditions aren't met
+        True if the data is in the correct format
+
+    """
     try:
         book_id = int(book_details[0])
         qty = int(book_details[3])
@@ -149,12 +198,27 @@ def verify_details(book_details):
 
 # Search for books
 def search_books(details=list):
+    """This function uses dynamic search to build a SQL query to search for
+    books in the database. It takes a list of search criteria and prints
+    the results to the user.
+
+    Parameters:
+        details (list) = A list of details the user wants to search for.
+            [id (int), title (string), author (string), qty (int)]
+
+    Returns:
+        input = Asking the user if they want to search again.
+            "Y" calls the function again
+            "N" exits the function.
+    """
+
     # 1=1 always true so use this as first statement and
     # append "AND" to other values
     # https://pushmetrics.io/blog/why-use-where-1-1-in-sql-
     # queries-exploring-the-surprising-benefits-of-a-seeming
     # ly-redundant-clause/#:~:text=What%20Does%20"WHERE%201%
     # 3D1,not%20filter%20out%20any%20records.
+
     query = "SELECT * FROM book WHERE 1=1"
     parameters = []
 
@@ -197,6 +261,9 @@ def search_books(details=list):
 
 # Extra function to list all books in DB
 def list_all():
+    """This function lists all books in the database by printing
+    the results in the output window.
+    """
     cursor.execute("""SELECT * FROM book ORDER BY id ASC;""")
     results = cursor.fetchall()
 
@@ -215,6 +282,8 @@ def list_all():
 
 # Generate a unique ID for each new book
 def generate_new_id():
+    """This function generates a unique ID for each book based on the
+    last entry to the database."""
     # ID's only need to be unique so no need to search through the
     # entire database just to find a missing number. i.e.
     # if 3002 doesn't exist, an added book will not have the ID 3002.
@@ -233,6 +302,7 @@ def generate_new_id():
 
 # Small function to confirm "Yes/No" answers
 def confirm(answer=str):
+    """A small function to confirm a yes or no input."""
     answer = answer.lower().strip()
     # Preventing endless loop with retry limit.
     retries = 3
